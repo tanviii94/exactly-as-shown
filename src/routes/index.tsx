@@ -35,6 +35,12 @@ function displayName(name: string | null) {
   return n.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
 }
 
+// Summaries arrive as plain text that may contain stray markup. Render it as
+// text only: tags are removed, never interpreted as HTML.
+function plainSummary(value: string | null | undefined) {
+  return (value ?? "").replace(/<[^>]*>/g, "").trim();
+}
+
 function Index() {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => {
@@ -111,8 +117,8 @@ function CallCard({ call }: { call: Call }) {
   const [open, setOpen] = useState(false);
   const name = displayName(call.name);
   const status = STATUS[call.status] ?? { label: call.status, icon: "?", cls: "bg-muted text-muted-foreground" };
-  const summary = call.summary?.trim();
-  const long = (summary?.length ?? 0) > 140;
+  const summary = plainSummary(call.summary);
+  const long = summary.length > 140;
 
   return (
     <li className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
