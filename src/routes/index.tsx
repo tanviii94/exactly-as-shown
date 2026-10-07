@@ -18,18 +18,15 @@ export const Route = createFileRoute("/")({
 
 export function formatDuration(total: number): string {
   const s = Math.max(0, Math.floor(Number(total) || 0));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
+  const m = Math.floor(s / 60);
   const sec = s % 60;
-  if (h) return `${h}h ${m}m ${sec}s`;
-  if (m) return `${m}m ${sec}s`;
-  return `${sec}s`;
+  return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
 const STATUS: Record<CallStatus, { label: string; icon: string; cls: string }> = {
   answered: { label: "Answered", icon: "✓", cls: "bg-success-soft text-success" },
   failed: { label: "Failed", icon: "✕", cls: "bg-danger-soft text-destructive" },
-  no_answer: { label: "No answer", icon: "–", cls: "bg-warning-soft text-warning" },
+  no_answer: { label: "No Answer", icon: "–", cls: "bg-warning-soft text-warning" },
 };
 
 function displayName(name: string | null) {
@@ -48,7 +45,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
-      <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">Logictap</p>
@@ -69,21 +66,37 @@ function Index() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search calls by name..."
-            className="h-12 w-full rounded-xl border bg-card pl-12 pr-4 text-base shadow-[var(--shadow-card)] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+            className="h-12 w-full rounded-xl border bg-card pl-12 pr-12 text-base shadow-[var(--shadow-card)] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+          )}
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
-          Showing {filtered.length} of {calls.length} calls
+          {query.trim() ? `${filtered.length} matching call${filtered.length === 1 ? "" : "s"}` : `Showing all ${calls.length} calls`}
         </p>
 
         {filtered.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
-            <p className="text-lg font-semibold">No calls found</p>
-            <p className="mt-1 text-sm text-muted-foreground">Try searching with a different name.</p>
+            <p className="break-words text-lg font-semibold">No calls found matching '{query.trim()}'</p>
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Clear search
+            </button>
           </div>
         ) : (
-          <ul className="mt-4 space-y-3">
+          <ul className="mt-4 grid gap-3 md:grid-cols-2 md:items-start">
             {filtered.map((c, i) => (
               <CallCard key={`${c.id}-${i}`} call={c} />
             ))}
@@ -105,7 +118,7 @@ function CallCard({ call }: { call: Call }) {
     <li className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <h2 className={`min-w-0 break-words text-base font-semibold ${name ? "" : "italic text-muted-foreground"}`}>
-          {name ?? "Unknown caller"}
+          {name ?? "Unknown Caller"}
         </h2>
         <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${status.cls}`}>
           <span aria-hidden>{status.icon}</span>
@@ -117,7 +130,7 @@ function CallCard({ call }: { call: Call }) {
       </p>
       {summary ? (
         <div className="mt-3">
-          <p className={`break-words text-sm leading-relaxed ${long && !open ? "line-clamp-2" : ""}`}>{summary}</p>
+          <p className={`break-words text-sm leading-relaxed ${long && !open ? "line-clamp-3" : ""}`}>{summary}</p>
           {long && (
             <button
               type="button"
@@ -130,7 +143,7 @@ function CallCard({ call }: { call: Call }) {
           )}
         </div>
       ) : (
-        <p className="mt-3 text-sm italic text-muted-foreground">No summary available</p>
+        <p className="mt-3 text-sm italic text-muted-foreground">No summary available for this call.</p>
       )}
     </li>
   );
